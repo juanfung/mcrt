@@ -4,39 +4,67 @@ import re
 
 #######################################
 ## path to coded guidance document snippets
-path_to_gudiance = '../rsa/Coded Segments_Economic Data.xlsx'
+path_to_guidance = '../data/raw/ras/V3RASCoded Segments_all_details.xlsx'
+## sample segments:
+path_to_list = '../rsa/Coded Segments_Economic Data.xlsx'
 
 #######################################
 ## path to output
-out_csv = '../rsa/test_corpus.csv'
+out_csv = '../data/processed/corpus_guidance.csv'
 
 #######################################
 ## load guidance document snippets to (list of) dataframes
-rsa = pd.read_excel(path_to_guidance,
-                    sheet_name=[0,1,2])
+rsa = pd.read_excel(path_to_guidance)
+## sample segments:
+rsa_list = pd.read_excel(path_to_list, sheet_name=[0,1,2])
 
 #####################################
 ## Organization (single file):
-## - each row contains {snippet, tag, source} (comma separated?)
-## - for RSA tag: add to column {snippet, tag, source, RSA}
+## - each row contains {Doc group, Doc name, Code, Segment}
+## - Doc group: high-level RAS tag (group)
+## - Doc name: Source document
+## - Code: tag_0\tag_1\tag_2
+## - Segment: text
 
-## select columns
-columns_keep = ['snippet', 'tag_0', 'tag_1', 'tag_2', 'source']
-
-df_corpus = pd.DataFrame(columns=columns_keep)
-
-## iterate through dataframes and process as needed
-for key, value in rsa.items():
-    df = rsa[key]
-    ## convert to string and remove hex codes and line breaks
-    df['snippet'] = df['Segment'].apply(str).replace(r'[^\x00-\x7f]',r'', regex=True).apply(lambda x: x.replace('\n',''))
+def make_corpus(df, group=False):
+    ## make a copy
+    corpus = df.copy()
+    ## set columns for new df
+    columns_keep = ['snippet', 'tag_0', 'tag_1', 'tag_2', 'source']
+    if group:
+        columns_keep.append('group')
+        
+    ## convert text to string and remove hex codes and line breaks
+    corpus['snippet'] = corpus['Segment'].apply(str).replace(r'[^\x00-\x7f]',r'', regex=True).apply(lambda x: x.replace('\n',''))
     ## split Code into multiple tags
-    df[['tag_0', 'tag_1', 'tag_2']] = df['Code'].str.split('\\', expand=True)
-    df.rename(columns={'Document name':'source'}, inplace=True)
-    df_corpus = pd.concat([df_corpus, df[columns_keep]])
+    corpus[['tag_0', 'tag_1', 'tag_2']] = corpus['Code'].str.split('\\', expand=True)
+    ## rename source and group
+    corpus.rename(columns={'Document name':'source'}, inplace=True)
+    if group:
+        corpus.rename(columns={'Document group':'group'}, inplace=True)
 
-## Add unique IDs
-df_corpus['unique_id'] = df_corpus.snippet.map(hash)
+    ## add unique IDs
+    corpus['unique_id'] = corpus.snippet.map(hash)
+    return corpus[columns_keep]
+
+
+## if there are multiple sheets, ie, a list of df's
+def corpus_from_list(dflist, group=False):
+    corpus_list = []
+    ## iterate through dataframes and process as needed
+    for key, value in dflist.items():
+        df = dflist[key].copy()
+        df = make_corpus(df, group=group)
+        corpus_list.append(df)
+
+    return pd.concat(corpus_list)
+
+
+## The sample corpus
+df_corpus_sample = corpus_from_list(rsa_list)
+
+## The whole corpus in one file (no list)
+df_corpus = make_corpus(rsa, ras=True)
 
 ## write to csv
 df_corpus.to_csv(out_csv, index=False)
