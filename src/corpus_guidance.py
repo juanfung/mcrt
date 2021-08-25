@@ -26,13 +26,15 @@ rsa_list = pd.read_excel(path_to_list, sheet_name=[0,1,2])
 ## - Code: tag_0\tag_1\tag_2
 ## - Segment: text
 
-def make_corpus(df, group=False):
+def make_corpus(df, group=False, author=False):
     ## make a copy
     corpus = df.copy()
     ## set columns for new df
     columns_keep = ['snippet', 'tag_0', 'tag_1', 'tag_2', 'source']
     if group:
         columns_keep.append('group')
+    if author:
+        columns_keep.append('author')
         
     ## convert text to string and remove hex codes and line breaks
     corpus['snippet'] = corpus['Segment'].apply(str).replace(r'[^\x00-\x7f]',r'', regex=True).apply(lambda x: x.replace('\n',''))
@@ -42,6 +44,9 @@ def make_corpus(df, group=False):
     corpus.rename(columns={'Document name':'source'}, inplace=True)
     if group:
         corpus.rename(columns={'Document group':'group'}, inplace=True)
+    ## add annotator?  
+    if author:
+        corpus.rename(columns={'Created by':'author'}, inplace=True)
 
     ## add unique IDs
     corpus['unique_id'] = corpus.snippet.map(hash)
@@ -64,7 +69,7 @@ def corpus_from_list(dflist, group=False):
 df_corpus_sample = corpus_from_list(rsa_list)
 
 ## The whole corpus in one file (no list)
-df_corpus = make_corpus(rsa, ras=True)
+df_corpus = make_corpus(rsa, group=True)
 
 ## write to csv
 df_corpus.to_csv(out_csv, index=False)
