@@ -6,7 +6,7 @@ import re
 ## path to coded guidance document snippets
 path_to_guidance = '../data/raw/ras/V3RASCoded Segments_all_details.xlsx'
 ## sample segments:
-path_to_list = '../rsa/Coded Segments_Economic Data.xlsx'
+path_to_list = '../data/raw/ras/sample/Coded Segments_Economic Data.xlsx'
 
 #######################################
 ## path to output
@@ -14,9 +14,9 @@ out_csv = '../data/processed/corpus_guidance.csv'
 
 #######################################
 ## load guidance document snippets to (list of) dataframes
-rsa = pd.read_excel(path_to_guidance)
+ras = pd.read_excel(path_to_guidance)
 ## sample segments:
-rsa_list = pd.read_excel(path_to_list, sheet_name=[0,1,2])
+ras_list = pd.read_excel(path_to_list, sheet_name=[0,1,2])
 
 #####################################
 ## Organization (single file):
@@ -30,7 +30,7 @@ def make_corpus(df, group=False, author=False):
     ## make a copy
     corpus = df.copy()
     ## set columns for new df
-    columns_keep = ['snippet', 'tag_0', 'tag_1', 'tag_2', 'source']
+    columns_keep = ['unique_id', 'snippet', 'tag_0', 'tag_1', 'tag_2', 'source']
     if group:
         columns_keep.append('group')
     if author:
@@ -48,8 +48,10 @@ def make_corpus(df, group=False, author=False):
     if author:
         corpus.rename(columns={'Created by':'author'}, inplace=True)
 
-    ## add unique IDs
-    corpus['unique_id'] = corpus.snippet.map(hash)
+    ## add unique ID by hashing
+    ## corpus['unique_id'] = corpus.snippet.map(hash)
+    ## add unique sequential ID
+    corpus['unique_id'] = corpus.index
     return corpus[columns_keep]
 
 
@@ -66,10 +68,12 @@ def corpus_from_list(dflist, group=False):
 
 
 ## The sample corpus
-df_corpus_sample = corpus_from_list(rsa_list)
+df_corpus_sample = corpus_from_list(ras_list)
 
 ## The whole corpus in one file (no list)
-df_corpus = make_corpus(rsa, group=True)
+df_corpus = make_corpus(ras, group=True)
 
 ## write to csv
 df_corpus.to_csv(out_csv, index=False)
+
+df_corpus_sample.to_csv('../data/processed/test_corpus.csv', index=False)
