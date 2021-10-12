@@ -4,7 +4,7 @@ import re
 
 #######################################
 ## path to coded guidance document snippets
-path_to_guidance = '../data/raw/ras/V3RASCoded Segments_all_details.xlsx'
+path_to_guidance = '../data/raw/ras/V4_Coded Segments.xlsx'
 ## sample segments:
 path_to_list = '../data/raw/ras/sample/Coded Segments_Economic Data.xlsx'
 
@@ -14,7 +14,8 @@ out_csv = '../data/processed/corpus_guidance.csv'
 
 #######################################
 ## load guidance document snippets to (list of) dataframes
-ras = pd.read_excel(path_to_guidance)
+#ras = pd.read_excel(path_to_guidance)
+ras = pd.read_excel(path_to_guidance, sheet_name=['Coded Segments'])['Coded Segments']
 ## sample segments:
 ras_list = pd.read_excel(path_to_list, sheet_name=[0,1,2])
 
